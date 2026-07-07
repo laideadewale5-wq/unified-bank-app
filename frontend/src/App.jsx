@@ -5,7 +5,7 @@ function App() {
   
   // In a real DevOps environment, this URL will be dynamic based on your AWS load balancer!
   // For now, we point it to your local backend.
-  const API_URL = 'http://localhost:8080/api/accounts'
+  const API_URL = 'http://18.170.23.41:8080/api/accounts'
 
   useEffect(() => {
     fetch(API_URL)
