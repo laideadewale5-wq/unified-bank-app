@@ -8,7 +8,7 @@ function App() {
   const [accountType, setAccountType] = useState('')
   const [balance, setBalance] = useState('')
   
-  const API_URL = 'http://18.130.41.51:8080/api/accounts'
+  const API_URL = 'http://18.133.229.172:8080/api/accounts'
 
   // Fetch accounts on load
   useEffect(() => {
