@@ -8,8 +8,7 @@ function App() {
   const [accountType, setAccountType] = useState('')
   const [balance, setBalance] = useState('')
   
-  const API_URL = 'http://18.133.229.172:8080/api/accounts'
-
+const API_URL = 'http://bank-backend-alb-456735600.eu-west-2.elb.amazonaws.com/api/accounts';
   // Fetch accounts on load
   useEffect(() => {
     fetchAccounts();
