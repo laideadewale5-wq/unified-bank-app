@@ -49,6 +49,6 @@ jobs:
       run: |
         aws ecs update-service \
           --cluster bank-app-cluster \
-          --service bank-backend-service \
+          --service bank-backend-service-v2 \
           --force-new-deployment \
           --region eu-west-2
