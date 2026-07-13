@@ -53,6 +53,25 @@ function App() {
       .catch(err => console.error("Error adding account:", err));
   };
 
+  // 🗑️ 🎯 NEW ADDITION: Function to handle deleting an account from MongoDB
+  const handleDeleteAccount = (accountId) => {
+    if (!accountId) return;
+
+    fetch(`${API_URL}/${accountId}`, {
+      method: 'DELETE',
+    })
+      .then(res => {
+        if (res.ok) {
+          console.log(`🗑️ Successfully deleted account: ${accountId}`);
+          // Re-fetch data to reflect the removal immediately on the layout
+          fetchAccounts();
+        } else {
+          console.error("❌ Failed to delete account from backend service");
+        }
+      })
+      .catch(err => console.error("❌ Network error while deleting account:", err));
+  };
+
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
       <h1>🏦 Unified Banking Dashboard</h1>
@@ -89,11 +108,35 @@ function App() {
       <h2>Your Assets</h2>
       <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
         {accounts.map(account => (
-          <div key={account._id || account.id} style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '8px', minWidth: '200px' }}>
-            <h3>{account.bank} - {account.type}</h3>
-            <p style={{ fontSize: '24px', fontWeight: 'bold', color: account.balance < 0 ? 'red' : 'green' }}>
-              ${typeof account.balance === 'number' ? account.balance.toFixed(2) : '0.00'}
-            </p>
+          <div key={account._id || account.id} style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '8px', minWidth: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <h3>{account.bank} - {account.type}</h3>
+              <p style={{ fontSize: '24px', fontWeight: 'bold', color: account.balance < 0 ? 'red' : 'green', margin: '10px 0' }}>
+                ${typeof account.balance === 'number' ? account.balance.toFixed(2) : '0.00'}
+              </p>
+            </div>
+            
+            {/* 🗑️ 🎯 NEW ADDITION: Red removal button mapped to MongoDB _id */}
+            <button 
+              onClick={() => handleDeleteAccount(account._id || account.id)}
+              style={{
+                marginTop: '15px',
+                padding: '6px 12px',
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                alignSelf: 'flex-start',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = '#bd2130'}
+              onMouseOut={(e) => e.target.style.backgroundColor = '#dc3545'}
+            >
+              Remove
+            </button>
           </div>
         ))}
       </div>

@@ -55,6 +55,26 @@ app.post('/api/accounts', async (req, res) => {
     }
 });
 
+// 🗑️ DELETE Route: Remove an account from MongoDB
+app.delete('/api/accounts/:id', async (req, res) => {
+    try {
+        const accountId = req.params.id;
+        
+        // Ask MongoDB to find the account by its unique _id and remove it
+        const deletedAccount = await Account.findByIdAndDelete(accountId);
+        
+        if (!deletedAccount) {
+            return res.status(404).json({ error: 'Account not found' });
+        }
+        
+        console.log(`🗑️ Successfully deleted account: ${accountId}`);
+        res.status(200).json({ message: 'Account successfully deleted' });
+    } catch (err) {
+        console.error('❌ Error deleting account:', err);
+        res.status(500).json({ error: 'Failed to delete account' });
+    }
+});
+
 // 🔗 POST Route: Sync Bank Account via Mono API V2
 app.post('/api/mono/sync', async (req, res) => {
   const { code } = req.body;
