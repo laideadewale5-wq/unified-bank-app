@@ -1,0 +1,54 @@
+name: Deploy Backend to AWS Fargate
+
+on:
+  push:
+    branches:
+      - main  # 🎯 Change to 'master' if your default branch is named master
+
+jobs:
+  deploy:
+    name: Build, Push, and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Checkout the repository code into the runner
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 2. Configure AWS Credentials using GitHub Secrets
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-west-2
+
+    # 3. Log in to AWS Elastic Container Registry (ECR)
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    # 4. Build, Tag, and Push the Docker Image to ECR
+    - name: Build, Tag, and Push Image to ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: unified-bank-backend
+        IMAGE_TAG: latest
+      run: |
+        # Change context to the backend directory where the Dockerfile lives
+        cd backend
+        
+        # Build the production container for the correct cloud architecture (linux/amd64)
+        docker build --platform linux/amd64 -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        
+        # Push the image to AWS ECR
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    # 5. Force a New Deployment in ECS Fargate to cycle the containers
+    - name: Force ECS Service Deployment
+      run: |
+        aws ecs update-service \
+          --cluster bank-app-cluster \
+          --service bank-backend-service \
+          --force-new-deployment \
+          --region eu-west-2
