@@ -7,7 +7,17 @@ const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 8080; 
 
-app.use(cors()); 
+// 🛡️ DEVOPS SECURITY: Strict CORS Configuration Allowlist
+const corsOptions = {
+    origin: [
+        'http://localhost:5173', // Allow local development
+        'https://unified-bank-oqg4ekvgp-adelaide1.vercel.app' // Allow your production Vercel frontend
+    ],
+    methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Accept', 'mono-sec-key']
+};
+
+app.use(cors(corsOptions)); 
 app.use(express.json());
 
 // 1. Setup the Database Connection String
@@ -18,9 +28,9 @@ mongoose.connect(MONGO_URI)
     .then(() => console.log('✅ Connected to MongoDB Atlas!'))
     .catch(err => console.error('❌ MongoDB connection error:', err));
 
-// 3. Define the Blueprint (Schema) - 🎯 ADDED accountId
+// 3. Define the Blueprint (Schema)
 const accountSchema = new mongoose.Schema({
-    accountId: String, // This will hold Mono's unique ID
+    accountId: String, 
     bank: String,
     type: String,
     balance: Number
@@ -60,7 +70,6 @@ app.delete('/api/accounts/:id', async (req, res) => {
     try {
         const accountId = req.params.id;
         
-        // Ask MongoDB to find the account by its unique _id and remove it
         const deletedAccount = await Account.findByIdAndDelete(accountId);
         
         if (!deletedAccount) {
@@ -86,7 +95,6 @@ app.post('/api/mono/sync', async (req, res) => {
   }
 
   try {
-    // Step 1: Exchange the temporary frontend code for a permanent Account ID 
     const authResponse = await axios.post('https://api.withmono.com/v2/accounts/auth', 
       { code: code },
       { 
@@ -104,7 +112,6 @@ app.post('/api/mono/sync', async (req, res) => {
         return res.status(500).json({ error: 'Failed to extract Account ID from Mono' });
     }
 
-    // Step 2: Fetch the real bank details
     const detailsResponse = await axios.get(`https://api.withmono.com/v2/accounts/${accountId}`, 
       { 
         headers: { 
@@ -117,22 +124,18 @@ app.post('/api/mono/sync', async (req, res) => {
     const payloadData = detailsResponse.data?.data || detailsResponse.data;
     const accountInfo = payloadData.account || payloadData;
 
-    // Step 3: Format the exact data variables
     const rawBalance = accountInfo.balance ? accountInfo.balance / 100 : 0; 
     const formattedBank = accountInfo.institution?.name || accountInfo.institution?.bank_name || 'Mono Linked Bank';
     const formattedType = accountInfo.type ? accountInfo.type.replace('_', ' ') : 'Account';
 
-    // 🎯 THE FIX: Check if the account already exists before saving!
     let existingAccount = await Account.findOne({ accountId: accountId });
 
     if (existingAccount) {
-        // If it exists, just update the balance to the latest amount
         existingAccount.balance = rawBalance;
         const updatedAccount = await existingAccount.save();
         console.log("🔄 Updated existing account balance");
         return res.status(200).json(updatedAccount);
     } else {
-        // If it does not exist, save a brand new entry
         const newAccount = new Account({
             accountId: accountId,
             bank: formattedBank,
